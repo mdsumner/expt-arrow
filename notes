@@ -1,0 +1,21 @@
+get the parquet like this
+
+ogr2ogr io-lulc-9-class.arrow  "/vsicurl/https://pcstacitems.blob.core.windows.net/items/io-lulc-9-class.parquet<and massive great long sign>"  -nlt MULTIPOLYGON
+
+
+
+convert the .parquet to geoarrow like this, as per leafgl (I don't know how to write the stream from GDAL in the right schema yet)
+
+
+data <- sf::read_sf("io-lulc-9-class.parquet")
+geom_col_name <- attr(data, "sf_column")
+geom_type <- geoarrow::infer_geoarrow_schema(data, coord_type = "INTERLEAVED")
+data_schema <- nanoarrow::infer_nanoarrow_schema(data)
+data_schema$children[[geom_col_name]] <- geom_type
+
+data_out = nanoarrow::as_nanoarrow_array_stream(
+  data
+  , schema = data_schema
+)
+
+nanoarrow::write_nanoarrow(data_out, "io-lulc-9-class-geo.arrow")
